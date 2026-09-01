@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regina Schwartz — Senior Software Developer & Technical Lead</title>
+  <meta name="description" content="Regina Schwartz — Technical Lead and Senior Software Developer. Java, Spring Boot, Kubernetes, Kafka, and AI systems.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header" id="top">
+    <nav class="nav">
+      <a class="brand" href="#top">R.</a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="#experience">Experience</a></li>
+        <li><a href="#expertise">Expertise</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li>
+          <a class="linkedin-cta" href="https://www.linkedin.com/in/regina-schwartz-6b4901161/" target="_blank" rel="noopener noreferrer">
+            Go to LinkedIn
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Based in Israel</p>
+      <h1>Regina Schwartz</h1>
+      <ul class="hero-roles" id="hero-roles"></ul>
+      <div class="hero-actions">
+        <a class="linkedin-cta linkedin-cta-lg" href="https://www.linkedin.com/in/regina-schwartz-6b4901161/" target="_blank" rel="noopener noreferrer">
+          Go to LinkedIn
+        </a>
+        <a class="ghost-btn" href="#experience">Scroll Down</a>
+      </div>
+    </section>
+
+    <section class="experience" id="experience">
+      <p class="section-kicker">Experience</p>
+      <h2>Years in the stack I ship with</h2>
+      <div class="experience-grid" id="experience-grid"></div>
+    </section>
+
+    <section class="expertise" id="expertise">
+      <p class="section-kicker">Expert In</p>
+      <h2>Backend, platforms, and AI workflows</h2>
+      <div class="tag-cloud" id="expertise-tags"></div>
+    </section>
+
+    <section class="about" id="about">
+      <p class="section-kicker">About</p>
+      <h2>Technical Lead. Platform engineer. Mentor.</h2>
+      <p class="lead" id="about-lead"></p>
+      <ul class="highlights" id="highlights"></ul>
+    </section>
+
+    <section class="roles" id="roles">
+      <p class="section-kicker">Career</p>
+      <h2>Professional path</h2>
+      <div class="timeline" id="timeline"></div>
+    </section>
+
+    <section class="contact" id="contact">
+      <p class="section-kicker">Let’s talk</p>
+      <h2>Book a conversation</h2>
+      <ul class="contact-points">
+        <li>Talk about architecture, platforms, or AI tooling</li>
+        <li>Review a system design or career move</li>
+        <li>Anything technical goes</li>
+      </ul>
+      <div class="hero-actions">
+        <a class="linkedin-cta linkedin-cta-lg" href="https://www.linkedin.com/in/regina-schwartz-6b4901161/" target="_blank" rel="noopener noreferrer">
+          Go to LinkedIn
+        </a>
+        <a class="ghost-btn" href="mailto:rinatschwartz770@gmail.com">Email me</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Regina Schwartz</p>
+    <a class="linkedin-cta" href="https://www.linkedin.com/in/regina-schwartz-6b4901161/" target="_blank" rel="noopener noreferrer">
+      Go to LinkedIn
+    </a>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/pixel.js"></script>
+
+  <!-- Meta Pixel Code -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+
+    fbq('init', 'shopify');
+    fbq('track', 'PageView');
+  </script>
+
+  <!-- End Meta Pixel Code -->
+</body>
+</html>

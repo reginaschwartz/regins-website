@@ -1,0 +1,11 @@
+.git
+.gitignore
+.idea
+.mvn
+.DS_Store
+Dockerfile
+docker-compose.yml
+pom.xml
+src
+tasks
+target
