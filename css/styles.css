@@ -291,6 +291,23 @@ section {
   color: var(--muted);
 }
 
+.whatsapp-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #04221f;
+  font-weight: 700;
+  font-size: 1.05rem;
+  box-shadow: var(--shadow);
+}
+
+.whatsapp-cta:hover {
+  background: #43e685;
+}
+
 .consent-banner {
   position: fixed;
   bottom: 20px;

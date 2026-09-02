@@ -40,3 +40,23 @@ alternative, but it still loads fbevents.js up front.
 
 Set `PIXEL_CONFIG.pixelId` in `js/pixel.js` to go live. Until then the module
 stays in console-log mode so events can be checked without a real pixel.
+
+# WhatsApp
+
+- [x] "Chat on WhatsApp" CTA in the contact section, prefilled message
+- [x] Pixel tracks wa.me clicks as Contact / WhatsApp
+- [x] Node + Express webhook in `whatsapp-bot/` with a branching intake flow
+- [x] Pure state machine, 6 unit tests, terminal simulator
+- [x] Dry-run mode so the flow runs with no Meta credentials
+- [x] Second compose service, healthchecked
+- [x] Verified: full conversation through the webhook, verify handshake,
+      signature accept/reject
+
+## Review
+
+The engine is a pure function of (session, input), which is why the flow can be
+tested and simulated without touching the Cloud API. Sessions are in-memory,
+matching the 24h service window; Redis only becomes necessary with >1 replica.
+
+Still needs from Meta: app, WhatsApp Business number, phone number ID, token,
+and a public HTTPS webhook (ngrok locally). Steps in `whatsapp-bot/README.md`.

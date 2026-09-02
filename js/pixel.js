@@ -138,6 +138,15 @@ function wireLinkEvents() {
       track("Contact", { content_name: "Email" });
     });
   });
+
+  document.querySelectorAll('a[href*="wa.me"]').forEach((link) => {
+    link.addEventListener("click", () => {
+      track("Contact", {
+        content_name: "WhatsApp",
+        content_category: link.closest("section, header, footer")?.id || "page",
+      });
+    });
+  });
 }
 
 function wireSectionViews() {

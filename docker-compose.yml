@@ -6,3 +6,14 @@ services:
     ports:
       - "${WEB_PORT:-8081}:80"
     restart: unless-stopped
+
+  whatsapp-bot:
+    build: ./whatsapp-bot
+    image: regins-whatsapp-bot:latest
+    container_name: regins-whatsapp-bot
+    ports:
+      - "${BOT_PORT:-3000}:3000"
+    env_file:
+      - path: whatsapp-bot/env.env
+        required: false
+    restart: unless-stopped
