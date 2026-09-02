@@ -1,6 +1,6 @@
-# Compose file format 3.8 works with classic docker-compose 1.25+ on EC2.
-# Avoid ${VAR:-default} — older binaries reject that interpolation.
-version: "3.8"
+# 3.3 is the newest format Amazon Linux's classic docker-compose accepts.
+# Do not use ${VAR:-default} or env_file path/required — those need Compose v2.
+version: "3.3"
 
 services:
   website:
@@ -8,7 +8,7 @@ services:
     image: regins-website:latest
     container_name: regins-website
     ports:
-      - "${WEB_PORT}:80"
+      - "9000:80"
     restart: unless-stopped
 
   whatsapp-bot:
@@ -16,7 +16,7 @@ services:
     image: regins-whatsapp-bot:latest
     container_name: regins-whatsapp-bot
     ports:
-      - "${BOT_PORT}:3000"
+      - "3000:3000"
     env_file:
       - whatsapp-bot/env.env
     restart: unless-stopped
