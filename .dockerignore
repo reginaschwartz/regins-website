@@ -3,9 +3,12 @@
 .idea
 .mvn
 .DS_Store
-Dockerfile
-docker-compose.yml
+.env
+env.env
+node_modules
 pom.xml
 src
 tasks
 target
+docker
+*.md

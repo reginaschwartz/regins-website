@@ -5,8 +5,6 @@ export const config = {
   phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || "",
   appSecret: process.env.WHATSAPP_APP_SECRET || "",
   graphVersion: process.env.GRAPH_API_VERSION || "v25.0",
-  // Without credentials the bot answers to the log instead of the Cloud API,
-  // so the whole flow can be exercised before the Meta app exists.
   dryRun: process.env.DRY_RUN === "true" || !process.env.WHATSAPP_ACCESS_TOKEN,
   sessionTtlMs: Number(process.env.SESSION_TTL_MS || 24 * 60 * 60 * 1000),
 };

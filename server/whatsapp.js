@@ -35,6 +35,7 @@ export async function sendReply(to, reply) {
 
   if (config.dryRun) {
     console.log(`[dry-run] -> ${to}:`, JSON.stringify(payload.interactive || payload.text));
+    return { dryRun: true };
   }
 
   const url = `https://graph.facebook.com/${config.graphVersion}/${config.phoneNumberId}/messages`;

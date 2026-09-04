@@ -1,10 +1,14 @@
 import crypto from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import express from "express";
 
 import { config, dryRunReason } from "./config.js";
 import { advance } from "./engine.js";
 import { getSession, saveSession, sessionCount } from "./sessions.js";
 import { parseIncoming, sendReply } from "./whatsapp.js";
+
+const rootDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const app = express();
 app.use(
@@ -65,8 +69,6 @@ app.post("/webhook", async (req, res) => {
     return;
   }
 
-  // Meta retries anything slower than a few seconds, so acknowledge first
-  // and do the conversation work afterwards.
   res.sendStatus(200);
 
   const incoming = parseIncoming(req.body);
@@ -99,10 +101,19 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
+app.use("/css", express.static(path.join(rootDir, "css")));
+app.use("/js", express.static(path.join(rootDir, "js")));
+app.get(["/", "/index.html"], (_req, res) => {
+  res.sendFile(path.join(rootDir, "index.html"));
+});
+app.get("/connect.html", (_req, res) => {
+  res.sendFile(path.join(rootDir, "connect.html"));
+});
+
 app.listen(config.port, () => {
   const reason = dryRunReason();
   console.log(
-    `whatsapp bot listening on :${config.port} (dryRun=${config.dryRun}${reason ? `, ${reason}` : ""}, graph=${config.graphVersion})`
+    `regins-website listening on :${config.port} (dryRun=${config.dryRun}${reason ? `, ${reason}` : ""}, graph=${config.graphVersion})`
   );
   if (/^\d{9,12}$/.test(config.phoneNumberId)) {
     console.warn(

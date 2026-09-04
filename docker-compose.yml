@@ -1,22 +1,13 @@
-# 3.3 is the newest format Amazon Linux's classic docker-compose accepts.
-# Do not use ${VAR:-default} or env_file path/required — those need Compose v2.
+# One app, one published port. Classic docker-compose 1.x: use format 3.3.
 version: "3.3"
 
 services:
-  website:
+  app:
     build: .
     image: regins-website:latest
     container_name: regins-website
     ports:
-      - "9000:80"
-    restart: unless-stopped
-
-  whatsapp-bot:
-    build: ./whatsapp-bot
-    image: regins-whatsapp-bot:latest
-    container_name: regins-whatsapp-bot
-    ports:
-      - "3000:3000"
+      - "9000:3000"
     env_file:
-      - whatsapp-bot/env.env
+      - env.env
     restart: unless-stopped
