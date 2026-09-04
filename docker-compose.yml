@@ -1,11 +1,9 @@
-# One app, one published port. Classic docker-compose 1.x: use format 3.3.
-version: "3.3"
-
+version: \"3\"
 services:
-  app:
-    build: .
-    image: regins-website:latest
-    container_name: regins-website
+  appserver:
+    container_name: server
+    hostname: localhost
+    image: sregina/backend:latest
     ports:
       - "3000:3000"
     env_file:
