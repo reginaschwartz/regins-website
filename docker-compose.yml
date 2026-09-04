@@ -7,7 +7,7 @@ services:
     image: regins-website:latest
     container_name: regins-website
     ports:
-      - "9000:3000"
+      - "3000:3000"
     env_file:
       - env.env
     restart: unless-stopped
