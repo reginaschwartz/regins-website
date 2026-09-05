@@ -106,9 +106,6 @@ app.use("/js", express.static(path.join(rootDir, "js")));
 app.get(["/", "/index.html"], (_req, res) => {
   res.sendFile(path.join(rootDir, "index.html"));
 });
-app.get("/connect.html", (_req, res) => {
-  res.sendFile(path.join(rootDir, "connect.html"));
-});
 
 app.listen(config.port, () => {
   const reason = dryRunReason();
