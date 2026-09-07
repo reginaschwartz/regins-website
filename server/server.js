@@ -38,7 +38,7 @@ function signatureValid(req) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
-app.get("/healthz", (_req, res) => {
+app.get("/api/healthz", (_req, res) => {
   res.json({
     status: "ok",
     sessions: sessionCount(),
@@ -51,7 +51,7 @@ app.get("/healthz", (_req, res) => {
   });
 });
 
-app.get("/webhook", (req, res) => {
+app.get("/api/webhook", (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
 
@@ -63,7 +63,7 @@ app.get("/webhook", (req, res) => {
   res.sendStatus(403);
 });
 
-app.post("/webhook", async (req, res) => {
+app.post("/api/webhook", async (req, res) => {
   if (!signatureValid(req)) {
     res.sendStatus(401);
     return;
