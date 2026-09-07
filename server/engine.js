@@ -58,7 +58,7 @@ export function advance(session, input) {
       replies: [
         {
           text: node.options
-            ? "Sorry, I did not catch that. Please tap one of the buttons. AAA"
+            ? "Sorry, I did not catch that. Please tap one of the buttons. AAA BBB"
             : "Sorry, I did not catch that. Could you type a short answer?",
           buttons: node.options?.map(({ id, title }) => ({ id, title })),
         },
