@@ -114,7 +114,7 @@ app.listen(config.port, () => {
   );
   if (/^\d{9,12}$/.test(config.phoneNumberId)) {
     console.warn(
-      "WHATSAPP_PHONE_NUMBER_ID looks like a phone number. Use the 15+ digit ID from WhatsApp > API Setup, not 054..."
+      "WHATSAPP_PHONE_NUMBER_ID looks like a phone number. Use the 15+ digit ID from WhatsApp > API Setup, not 054...bla bla bla"
     );
   }
 });
