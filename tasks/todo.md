@@ -60,3 +60,34 @@ matching the 24h service window; Redis only becomes necessary with >1 replica.
 
 Still needs from Meta: app, WhatsApp Business number, phone number ID, token,
 and a public HTTPS webhook (ngrok locally). Steps in `whatsapp-bot/README.md`.
+
+# CloudFront API origin
+
+- [x] Diagnose 403 on `https://testec2.rinatschwartz770.xyz/api/webhook`
+- [x] Point `api/*` origin at EC2 public DNS `:3000` (CloudFront rejects raw IPs)
+- [x] Wait until distribution `E21BHV4UQ0NX7K` is Deployed
+- [x] Verify `/api/healthz` and Meta webhook verify over HTTPS
+- [x] Confirm `/index.html` still comes from S3
+
+## Review
+
+`api/*` was looping back to CloudFront on port 80. Origin is now
+`ec2-51-21-198-86.eu-north-1.compute.amazonaws.com:3000` (http-only).
+S3 remains the default origin. If the instance public DNS changes after a
+stop/start, this origin must be updated again — a stable hostname would be better.
+
+# On-site bot chat
+
+- [x] Replace wa.me CTA with a button that opens an on-page chat
+- [x] POST `/api/chat` using the same `advance()` engine as the WhatsApp webhook
+- [x] Show bot replies + choice buttons and accept typed answers
+- [x] Pixel tracks opening the chat as Contact
+- [x] Tests for the chat handler
+- [x] Verify a 2–3 step hiring/mentoring path against the local server
+
+## Review
+
+`wa.me` opened personal WhatsApp and never reached Node. The contact CTA now
+opens an on-page chat that POSTs to `/api/chat`, which is the same `advance()`
+state machine the WhatsApp webhook uses. Live site still needs a static deploy
+to S3 and a container rebuild so CloudFront serves the new HTML and `/api/chat`.

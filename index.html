@@ -81,9 +81,9 @@
         <a class="linkedin-cta linkedin-cta-lg" href="https://www.linkedin.com/in/regina-schwartz-6b4901161/" target="_blank" rel="noopener noreferrer">
           Go to LinkedIn
         </a>
-        <a class="whatsapp-cta" href="https://wa.me/972543077026?text=Hi%20Regina%2C%20I%20found%20your%20site%20and%20would%20like%20to%20talkWithMe." target="_blank" rel="noopener noreferrer">
-          Chat on WhatsApp
-        </a>
+        <button type="button" class="whatsapp-cta" id="open-assistant" aria-haspopup="dialog" aria-controls="assistant-dialog" aria-expanded="false">
+          Chat with the bot
+        </button>
         <a class="ghost-btn" href="mailto:rinatschwartz770@gmail.com">Email me</a>
       </div>
     </section>
@@ -96,7 +96,26 @@
     </a>
   </footer>
 
+  <div class="assistant-dialog" id="assistant-dialog" hidden>
+    <div class="assistant-panel" role="dialog" aria-modal="true" aria-labelledby="assistant-title">
+      <header class="assistant-header">
+        <div>
+          <p class="assistant-kicker">Regina's assistant</p>
+          <h2 id="assistant-title">Let’s find out what you need</h2>
+        </div>
+        <button type="button" class="assistant-close" id="close-assistant" aria-label="Close chat">×</button>
+      </header>
+      <div class="assistant-log" id="assistant-log" aria-live="polite"></div>
+      <form class="assistant-form" id="assistant-form">
+        <label class="visually-hidden" for="assistant-input">Your message</label>
+        <input id="assistant-input" type="text" maxlength="500" autocomplete="off" placeholder="Type a reply…">
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  </div>
+
   <script src="js/main.js"></script>
+  <script src="js/chat.js"></script>
   <script src="js/pixel.js"></script>
 
   <!-- Meta Pixel Code -->

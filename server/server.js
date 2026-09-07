@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
 
+import { handleChat } from "./chat.js";
 import { config, dryRunReason } from "./config.js";
 import { advance } from "./engine.js";
 import { getSession, saveSession, sessionCount } from "./sessions.js";
@@ -99,6 +100,11 @@ app.post("/api/webhook", async (req, res) => {
       ),
     });
   }
+});
+
+app.post("/api/chat", (req, res) => {
+  const result = handleChat(req.body || {});
+  res.json(result);
 });
 
 app.use("/css", express.static(path.join(rootDir, "css")));

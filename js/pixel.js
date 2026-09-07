@@ -139,12 +139,10 @@ function wireLinkEvents() {
     });
   });
 
-  document.querySelectorAll('a[href*="wa.me"]').forEach((link) => {
-    link.addEventListener("click", () => {
-      track("Contact", {
-        content_name: "WhatsApp",
-        content_category: link.closest("section, header, footer")?.id || "page",
-      });
+  document.getElementById("open-assistant")?.addEventListener("click", () => {
+    track("Contact", {
+      content_name: "Assistant chat",
+      content_category: "contact",
     });
   });
 }
