@@ -91,3 +91,10 @@ stop/start, this origin must be updated again — a stable hostname would be bet
 opens an on-page chat that POSTs to `/api/chat`, which is the same `advance()`
 state machine the WhatsApp webhook uses. Live site still needs a static deploy
 to S3 and a container rebuild so CloudFront serves the new HTML and `/api/chat`.
+
+# WhatsApp client conversation
+
+- [x] Restore Chat on WhatsApp (`wa.me`) instead of the on-page widget
+- [x] Prefill a short Hi so Send starts the same bot flow
+- [ ] Fill `WHATSAPP_ACCESS_TOKEN` and the 15+ digit Phone number ID
+- [ ] Point `wa.me` at the Cloud API / test display number from API Setup
