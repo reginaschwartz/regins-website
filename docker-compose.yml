@@ -1,11 +1,30 @@
-version: "3"
+version: "3.3"
 services:
   appserver:
     container_name: server
     hostname: localhost
+    build: .
     image: sregina/backend:latest
     ports:
       - "3000:3000"
     env_file:
       - env.env
     restart: unless-stopped
+
+  coverletter:
+    container_name: cover-letter-agent
+    build: ./pyapi
+    image: sregina/cover-letter-agent:latest
+    ports:
+      - "8000:8000"
+    environment:
+      COVER_LETTER_BACKEND: auto
+      COVER_LETTER_MODEL: Qwen/Qwen2.5-0.5B-Instruct
+      COVER_LETTER_ARTIFACT_ROOT: /data/cover-letters
+      COVER_LETTER_ALLOWED_ORIGINS: https://testec2.rinatschwartz770.xyz,http://localhost:3000,http://127.0.0.1:3000
+    volumes:
+      - cover-letter-data:/data
+    restart: unless-stopped
+
+volumes:
+  cover-letter-data:

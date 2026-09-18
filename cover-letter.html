@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cover letter agent — Regina Schwartz</title>
+  <meta name="description" content="Generate a short job application cover letter from a resume and a job description.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="site-header" id="top">
+    <nav class="nav">
+      <a class="brand" href="index.html">R.</a>
+      <button class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="nav-links">
+        <li><a href="index.html#experience">Experience</a></li>
+        <li><a href="index.html#expertise">Expertise</a></li>
+        <li><a href="index.html#about">About</a></li>
+        <li><a href="index.html#contact">Contact</a></li>
+        <li>
+          <a class="linkedin-cta" href="https://www.linkedin.com/in/regina-schwartz-6b4901161/" target="_blank" rel="noopener noreferrer">
+            Go to LinkedIn
+          </a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="tool-page">
+    <section class="tool-intro">
+      <p class="section-kicker">Cover letter agent</p>
+      <h1>Three or four lines, written for the job</h1>
+      <p class="lead">
+        Paste a job description and a resume. A FastAPI agent runs a Hugging Face
+        model, writes the letter, files it in a folder named after today’s date,
+        and zips it for download.
+      </p>
+    </section>
+
+    <section class="tool-grid">
+      <form class="tool-form" id="cover-letter-form">
+        <label for="job-description">Job description</label>
+        <textarea id="job-description" name="jobDescription" rows="9" required minlength="20"
+          placeholder="Paste the posting: responsibilities, stack, seniority…"></textarea>
+
+        <div class="field-heading">
+          <label for="resume-text">Resume</label>
+          <label class="file-pick" for="resume-file">
+            Load .txt / .md
+            <input id="resume-file" type="file" accept=".txt,.md,text/plain,text/markdown">
+          </label>
+        </div>
+        <textarea id="resume-text" name="resumeText" rows="9" required minlength="20"
+          placeholder="Paste the resume text, or load a .txt / .md file…"></textarea>
+
+        <label for="company-label">Company <span class="hint">optional, used in the folder name</span></label>
+        <input id="company-label" name="label" type="text" maxlength="60" autocomplete="organization"
+          placeholder="Acme">
+
+        <div class="tool-actions">
+          <button class="linkedin-cta linkedin-cta-lg" type="submit" id="generate">Write the letter</button>
+          <a class="ghost-btn" href="index.html#contact">Back to contact</a>
+        </div>
+        <p class="form-error" id="form-error" role="alert" hidden></p>
+      </form>
+
+      <section class="tool-result" id="result" hidden aria-live="polite">
+        <header class="result-header">
+          <h2>Cover letter</h2>
+          <span class="badge" id="backend-badge"></span>
+        </header>
+        <pre class="letter" id="letter"></pre>
+        <div class="tool-actions">
+          <button type="button" class="ghost-btn" id="copy-letter">Copy text</button>
+          <a class="linkedin-cta" id="download-zip" href="#" download hidden>Download .zip</a>
+        </div>
+        <h3 class="steps-title">What the agent did</h3>
+        <ol class="agent-steps" id="agent-steps"></ol>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Regina Schwartz</p>
+    <a class="linkedin-cta" href="https://www.linkedin.com/in/regina-schwartz-6b4901161/" target="_blank" rel="noopener noreferrer">
+      Go to LinkedIn
+    </a>
+  </footer>
+
+  <script src="js/cover-letter.js"></script>
+</body>
+</html>

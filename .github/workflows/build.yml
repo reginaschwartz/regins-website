@@ -17,6 +17,11 @@ jobs:
         run: npm ci
       - name: Build application
         run: npm run build
+      - name: Verify cover letter static files
+        run: |
+          test -f dist/webapp/cover-letter.html
+          test -f dist/webapp/js/cover-letter.js
+          test -f dist/webapp/css/styles.css
       - name: Install AWS CLI
         run: |
           sudo apt-get update

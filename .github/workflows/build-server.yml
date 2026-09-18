@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Install Node.js
         uses: actions/setup-node@v5
         with:
@@ -25,6 +25,10 @@ jobs:
         run: npm ci
       - name: Build application
         run: npm run build
+      - name: Verify cover letter static files
+        run: |
+          test -f dist/webapp/cover-letter.html
+          test -f dist/webapp/js/cover-letter.js
       - name: Install AWS CLI
         run: |
           sudo apt-get update
@@ -39,21 +43,43 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and push site image
         id: docker_build
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ env.APP_VERSION }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ env.APP_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
+      - name: Build and push cover letter API image
+        id: docker_build_pyapi
+        uses: docker/build-push-action@v2
+        with:
+          context: ./pyapi
+          file: ./pyapi/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/cover-letter-agent:${{ env.APP_VERSION }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/cover-letter-agent:latest
+      - name: Copy compose file to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_INSTANCE_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.SSH_KEY }}
+          source: docker-compose.yml
+          target: /home/ec2-user/regins-website
       - name: Deploy to AWS EC2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_INSTANCE_PUBLIC_IP }}
           username: ec2-user
-          key: ${{ secrets.SSH_KEY }} # store the SSH password as a secret in the repository
+          key: ${{ secrets.SSH_KEY }}
           script: |
             cd /home/ec2-user/regins-website
-            sudo /usr/local/bin/docker-compose  down || true
-            sed -i 's/image: ${{ secrets.DOCKERHUB_USERNAME }}\/backend:.*/image: ${{ secrets.DOCKERHUB_USERNAME }}\/backend:v1.0.${{ github.run_number }}/g' /home/ec2-user/regins-website/docker-compose.yml
-            sudo /usr/local/bin/docker-compose  up -d || true
+            sudo /usr/local/bin/docker-compose down || true
+            sed -i 's/image: ${{ secrets.DOCKERHUB_USERNAME }}\/backend:.*/image: ${{ secrets.DOCKERHUB_USERNAME }}\/backend:v1.0.${{ github.run_number }}/g' docker-compose.yml
+            sed -i 's/image: ${{ secrets.DOCKERHUB_USERNAME }}\/cover-letter-agent:.*/image: ${{ secrets.DOCKERHUB_USERNAME }}\/cover-letter-agent:v1.0.${{ github.run_number }}/g' docker-compose.yml
+            sudo /usr/local/bin/docker-compose pull || true
+            sudo /usr/local/bin/docker-compose up -d || true

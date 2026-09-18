@@ -98,3 +98,64 @@ to S3 and a container rebuild so CloudFront serves the new HTML and `/api/chat`.
 - [x] Prefill a short Hi so Send starts the same bot flow
 - [ ] Fill `WHATSAPP_ACCESS_TOKEN` and the 15+ digit Phone number ID
 - [ ] Point `wa.me` at the Cloud API / test display number from API Setup
+
+# Cover letter agent (FastAPI + PyTorch + Hugging Face)
+
+- [x] `pyapi/` FastAPI service, routes under `/pyapi/*`
+- [x] Hugging Face causal LM through PyTorch, lazy loaded, device auto-detected
+- [x] Deterministic template backend so the endpoint works with no weights
+- [x] Tools: dated folder, save document, copy into folder, zip the folder
+- [x] Agent asks the model which tools to run, falls back to the default plan
+- [x] Artifact download endpoint, path traversal blocked
+- [x] `cover-letter.html` + `js/cover-letter.js`, styled with the existing tokens
+- [x] Added to `scripts/build.js`, the Node routes, the Dockerfile and compose
+- [x] 18 pytest cases, existing 11 node tests still pass
+- [ ] Route `/pyapi/*` through CloudFront to EC2:8000 (needs `aws login`)
+- [ ] Choose the production model, or keep the template backend on a small box
+
+## Review
+
+Prompts are fixed in `pyapi/app/prompts.py`: the system prompt sets the polite
+applicant persona, the user prompt asks for 3-4 lines, and only the job and
+resume text vary between runs.
+
+The agent is a tool registry plus a short loop rather than a framework. The
+model is asked to pick tools and its choice is honoured, but the order is forced
+back into dependency order and an unparseable answer falls back to the default
+plan — the 0.5B class of model this runs on cannot be trusted to emit valid tool
+JSON. That mirrors `resolveChoice()` in the WhatsApp engine, which also accepts
+either a tapped button or typed text.
+
+`Workspace` confines every path to the artifact root, so a tool cannot write or
+read outside it.
+
+Backend selection is the same shape as the bot's `dryRun`: `auto` tries the
+Hugging Face model and degrades to the template composer if weights or memory
+are missing, so the endpoint never hard-fails.
+
+# LRU cache (Java)
+
+- [x] `org.example.cache.LruCache<K, V>`: HashMap + doubly linked list, O(1)
+- [x] Rejects null keys/values so `get` returning null is unambiguous
+- [x] `keysMostRecentFirst()` exposes eviction order for tests and monitoring
+- [x] JUnit 4 test class, 13 cases, plus the junit dependency in `pom.xml`
+- [x] Compiles under `-Xlint:all -Werror` on JDK 26 and matches `tasks/lru_cache.py`
+
+## Review
+
+`containsKey` deliberately does not refresh recency, so monitoring code cannot
+change which entry gets evicted next. `get` and `put` do refresh it.
+
+Not thread-safe, and documented as such. A synchronized wrapper would serialise
+every read, which defeats the point of a cache; Caffeine is the right answer if
+concurrency is needed.
+
+Maven is not installed on this machine, so the suite was compiled and run
+directly with the JDK 26 `javac`/`java` and JUnit jars from Maven Central.
+`mvn test` should work unchanged once Maven is available.
+
+# Docker + CI for pyapi and cover-letter page
+
+- [x] `docker-compose.yml`: Node `appserver` (cover-letter.html + js) and `coverletter` FastAPI
+- [x] `build.yml`: fail the S3 deploy if `cover-letter.html` / `js/cover-letter.js` are missing
+- [x] `build-server.yml`: push both images, copy compose to EC2, pull and up both services

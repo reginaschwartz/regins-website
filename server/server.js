@@ -112,6 +112,9 @@ app.use("/js", express.static(path.join(rootDir, "js")));
 app.get(["/", "/index.html"], (_req, res) => {
   res.sendFile(path.join(rootDir, "index.html"));
 });
+app.get("/cover-letter.html", (_req, res) => {
+  res.sendFile(path.join(rootDir, "cover-letter.html"));
+});
 
 app.listen(config.port, () => {
   const reason = dryRunReason();

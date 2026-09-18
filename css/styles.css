@@ -381,6 +381,187 @@ section {
   }
 }
 
+.tool-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.tool-intro {
+  padding: 56px 0 24px;
+}
+
+.tool-intro h1 {
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 10px 0 18px;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 720px;
+  gap: 24px;
+  align-items: start;
+  padding: 0 0 72px;
+}
+
+/* Widen to two columns only once there is a result to show beside the form. */
+.tool-grid:has(.tool-result:not([hidden])) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  max-width: none;
+}
+
+.tool-form,
+.tool-result {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.tool-form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.tool-form .hint {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.88rem;
+}
+
+.tool-form textarea,
+.tool-form input[type="text"] {
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.96rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.tool-form textarea:focus,
+.tool-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.field-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.file-pick {
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.file-pick input {
+  display: none;
+}
+
+.tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.tool-actions button {
+  font-family: inherit;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+}
+
+.tool-actions .ghost-btn {
+  background: transparent;
+  cursor: pointer;
+}
+
+.tool-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.form-error {
+  margin-top: 16px;
+  color: #ff8f8f;
+  font-size: 0.95rem;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.result-header h2 {
+  font-size: 1.3rem;
+}
+
+.badge {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.letter {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.7;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.steps-title {
+  font-size: 1rem;
+  margin: 24px 0 10px;
+}
+
+.agent-steps {
+  margin: 0 0 0 18px;
+  color: var(--muted);
+  font-size: 0.92rem;
+  display: grid;
+  gap: 6px;
+}
+
+.agent-steps code {
+  color: var(--accent);
+}
+
+.agent-steps .step-failed code {
+  color: #ff8f8f;
+}
+
+@media (max-width: 900px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .experience-grid,
   .highlights {
