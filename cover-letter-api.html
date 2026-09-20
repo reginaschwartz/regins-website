@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POST /pyapi/cover-letter — module diagram</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .diagram-page {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 56px 24px 72px;
+    }
+
+    .diagram-page h1 {
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      letter-spacing: -0.02em;
+      margin: 10px 0 16px;
+    }
+
+    .diagram-wrap {
+      overflow-x: auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px 12px;
+      margin: 28px 0;
+    }
+
+    .diagram-wrap .mermaid {
+      display: flex;
+      justify-content: center;
+    }
+
+    .diagram-page table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+
+    .diagram-page th,
+    .diagram-page td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    .diagram-page th {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .diagram-page code {
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="index.html">R.</a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="cover-letter.html">Cover letter</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="diagram-page">
+    <p class="section-kicker">Cover letter agent</p>
+    <h1>POST /pyapi/cover-letter</h1>
+    <p class="lead">Request path through the FastAPI modules in <code>pyapi/app</code>.</p>
+
+    <div class="diagram-wrap">
+      <pre class="mermaid" role="img" aria-label="Flow from the cover letter page through main, agent, llm, prompts, and tools">
+flowchart TD
+  client["cover-letter.html / curl"] -->|POST jobDescription resumeText label| main["main.py<br/>cover_letter()"]
+
+  main --> config["config.py<br/>max input size, CORS, artifact root"]
+  main --> getBackend["llm.py<br/>load_backend()"]
+  main --> agent["agent.py<br/>run_agent()"]
+
+  getBackend --> template["TemplateBackend"]
+  getBackend --> hf["TransformersBackend<br/>PyTorch + Hugging Face"]
+
+  agent --> prompts["prompts.py<br/>SYSTEM_PROMPT USER_PROMPT<br/>build_context TOOL_PROMPT"]
+  agent --> llmGen["llm.py generate()"]
+  agent --> tools["tools.py<br/>Workspace + registry"]
+
+  llmGen --> template
+  llmGen --> hf
+  prompts --> llmGen
+
+  tools --> saveT["save_cover_letter"]
+  tools --> folderT["create_dated_folder"]
+  tools --> copyT["copy_document"]
+  tools --> zipT["zip_folder"]
+
+  agent -->|AgentRun letter steps archive| main
+  main -->|JSON + downloadUrl| client
+  client -.->|GET /pyapi/artifacts/name| artifacts["main.py artifact()<br/>FileResponse zip"]
+  artifacts --> tools
+      </pre>
+    </div>
+
+    <h2>Main modules</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Module</th>
+          <th>Role on this request</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>main.py</code></td>
+          <td>HTTP in/out, size checks, lazy <code>get_backend()</code>, zip URL</td>
+        </tr>
+        <tr>
+          <td><code>config.py</code></td>
+          <td>Limits, origins, model id, artifact root</td>
+        </tr>
+        <tr>
+          <td><code>prompts.py</code></td>
+          <td>Fixed system/user text and the job+resume context</td>
+        </tr>
+        <tr>
+          <td><code>llm.py</code></td>
+          <td>Writes the letter (template or HF/PyTorch)</td>
+        </tr>
+        <tr>
+          <td><code>agent.py</code></td>
+          <td>Calls generate, plans tools, runs them in order</td>
+        </tr>
+        <tr>
+          <td><code>tools.py</code></td>
+          <td>Date folder, save doc, copy, zip — paths stay inside the workspace</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <script type="module">
+    import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "dark",
+      securityLevel: "strict",
+      flowchart: { curve: "basis", htmlLabels: true },
+    });
+  </script>
+</body>
+</html>

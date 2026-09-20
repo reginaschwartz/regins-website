@@ -110,8 +110,8 @@ to S3 and a container rebuild so CloudFront serves the new HTML and `/api/chat`.
 - [x] `cover-letter.html` + `js/cover-letter.js`, styled with the existing tokens
 - [x] Added to `scripts/build.js`, the Node routes, the Dockerfile and compose
 - [x] 18 pytest cases, existing 11 node tests still pass
-- [ ] Route `/pyapi/*` through CloudFront to EC2:8000 (needs `aws login`)
-- [ ] Choose the production model, or keep the template backend on a small box
+- [x] Route `/pyapi/*` through CloudFront to EC2:8000 (`cover-letter-pyapi` origin)
+- [x] Production `t3.micro` uses `COVER_LETTER_BACKEND=template` (Qwen OOM-kills the container)
 
 ## Review
 
