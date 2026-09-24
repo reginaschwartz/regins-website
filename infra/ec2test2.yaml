@@ -1,0 +1,359 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Persistent ec2test2 env (S3 website + EC2 EIP + CloudFront + DNS). Idempotent
+  create-or-update; S3 website origin matches testec2 so CloudFront can fetch over HTTP.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@2
+  com.aws.cloudformation.Context:
+    arch: CF default->S3 website; api/* -> EC2:3000; pyapi/* -> EC2:8000; alias Route53
+    must:
+      - CertificateArn is a us-east-1 ACM cert covering DomainName
+      - do not add S3 Deny insecure transport (website origin is HTTP)
+      - EIP + origin DNS so CloudFront origin host stays stable
+    ref:
+      - infra/README.md
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: ec2test2.rinatschwartz770.xyz
+    AllowedPattern: "^[a-z0-9.-]+\\.[a-z]{2,}$"
+  OriginHostname:
+    Type: String
+    Default: origin-ec2test2.rinatschwartz770.xyz
+    AllowedPattern: "^[a-z0-9.-]+\\.[a-z]{2,}$"
+    Description: Stable DNS name for the EC2 EIP; used as the CloudFront API origins.
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+  CertificateArn:
+    Type: String
+    AllowedPattern: "^arn:aws:acm:us-east-1:[0-9]{12}:certificate/.+"
+    Description: ACM certificate ARN in us-east-1 covering DomainName.
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: test
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues: [t3.micro, t3.small, t3.medium]
+  LatestAmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+Mappings:
+  CloudFront:
+    Managed:
+      CachingDisabled: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+      AllViewer: 216adef6-5c7f-47e4-b989-5492eafa07d3
+      HostedZoneId: Z2FDTNDATAQYW2
+
+Resources:
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Website endpoint origin like testec2; BlockPublicPolicy off so the GetObject policy can attach
+        must:
+          - website hosting on
+          - x deny-insecure-transport (CF fetches HTTP)
+        mutable: change-with-constraints
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-site"
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: S3 website origin has no OAC; CloudFront GETs public objects over HTTP
+        must:
+          - GetObject for * on this bucket only
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadWebsite
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${SiteBucket.Arn}/*"
+
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: GHA SSH IPs rotate and CF edge ranges are large; 22/3000/8000 from 0.0.0.0/0 matches current testec2 reachability
+        must:
+          - 3000 and 8000 reachable from CloudFront
+          - 22 reachable from GitHub-hosted runners
+        mutable: review-required
+    Properties:
+      GroupDescription: !Sub "${AWS::StackName} ssh + app ports"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: SSH for GitHub Actions deploy
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+          Description: Node via CloudFront api/*
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+          Description: FastAPI via CloudFront pyapi/*
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-sg"
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: AL2023 + docker-compose 1.22 so the existing GHA SSH steps work; t3.micro needs template backend
+        must:
+          - KeyName exists in the account
+          - user-data installs docker-compose at /usr/local/bin/docker-compose
+        mutable: review-required
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 16
+            VolumeType: gp3
+            Encrypted: true
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          set -euxo pipefail
+          dnf install -y docker
+          systemctl enable --now docker
+          usermod -aG docker ec2-user
+          curl -fsSL -o /usr/local/bin/docker-compose \
+            https://github.com/docker/compose/releases/download/1.22.0/docker-compose-Linux-x86_64
+          chmod +x /usr/local/bin/docker-compose
+          mkdir -p /home/ec2-user/regins-website /data/cover-letters
+          cat > /home/ec2-user/regins-website/env.env <<'ENVEOF'
+          WHATSAPP_VERIFY_TOKEN=unused
+          WHATSAPP_ACCESS_TOKEN=
+          WHATSAPP_PHONE_NUMBER_ID=
+          WHATSAPP_DISPLAY_NUMBER=
+          WHATSAPP_APP_SECRET=
+          GRAPH_API_VERSION=v25.0
+          DRY_RUN=true
+          ENVEOF
+          chown -R ec2-user:ec2-user /home/ec2-user/regins-website
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Public DNS of a stop/start instance changes; EIP keeps the CloudFront origin host stable
+        must:
+          - associate to Instance
+        mutable: must-never-change
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-eip"
+
+  ElasticIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      AllocationId: !GetAtt ElasticIP.AllocationId
+      InstanceId: !Ref Instance
+
+  OriginRecord:
+    Type: AWS::Route53::RecordSet
+    DependsOn: ElasticIPAssociation
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: CloudFront rejects raw IPs; this A record is the origin hostname
+        must:
+          - name equals OriginHostname
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref OriginHostname
+      Type: A
+      TTL: 60
+      ResourceRecords:
+        - !Ref ElasticIP
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn: OriginRecord
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Copy of testec2 behaviors with a dedicated pyapi origin on :8000
+        must:
+          - default origin = S3 website
+          - api/* -> :3000 POST allowed no cache
+          - pyapi/* -> :8000 read timeout 60s
+        mutable: change-with-constraints
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "${AWS::StackName} website + APIs"
+        Aliases:
+          - !Ref DomainName
+        HttpVersion: http2
+        IPV6Enabled: true
+        PriceClass: PriceClass_100
+        DefaultRootObject: index.html
+        Origins:
+          - Id: site-s3
+            DomainName: !Sub "${SiteBucket}.s3-website.${AWS::Region}.amazonaws.com"
+            CustomOriginConfig:
+              HTTPPort: 80
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 30
+              OriginKeepaliveTimeout: 5
+          - Id: node-api
+            DomainName: !Ref OriginHostname
+            CustomOriginConfig:
+              HTTPPort: 3000
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 30
+              OriginKeepaliveTimeout: 5
+          - Id: pyapi
+            DomainName: !Ref OriginHostname
+            CustomOriginConfig:
+              HTTPPort: 8000
+              HTTPSPort: 443
+              OriginProtocolPolicy: http-only
+              OriginReadTimeout: 60
+              OriginKeepaliveTimeout: 5
+        DefaultCacheBehavior:
+          TargetOriginId: site-s3
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachedMethods:
+            - GET
+            - HEAD
+          Compress: true
+          CachePolicyId: !FindInMap [CloudFront, Managed, CachingDisabled]
+        CacheBehaviors:
+          - PathPattern: api/*
+            TargetOriginId: node-api
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - PATCH
+              - POST
+              - DELETE
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            CachePolicyId: !FindInMap [CloudFront, Managed, CachingDisabled]
+            OriginRequestPolicyId: !FindInMap [CloudFront, Managed, AllViewer]
+          - PathPattern: pyapi/*
+            TargetOriginId: pyapi
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - PUT
+              - PATCH
+              - POST
+              - DELETE
+            CachedMethods:
+              - GET
+              - HEAD
+            Compress: true
+            CachePolicyId: !FindInMap [CloudFront, Managed, CachingDisabled]
+            OriginRequestPolicyId: !FindInMap [CloudFront, Managed, AllViewer]
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+
+  AliasA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt Distribution.DomainName
+        HostedZoneId: !FindInMap [CloudFront, Managed, HostedZoneId]
+        EvaluateTargetHealth: false
+
+  AliasAAAA:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref DomainName
+      Type: AAAA
+      AliasTarget:
+        DNSName: !GetAtt Distribution.DomainName
+        HostedZoneId: !FindInMap [CloudFront, Managed, HostedZoneId]
+        EvaluateTargetHealth: false
+
+Outputs:
+  BucketName:
+    Description: Static site bucket for GitHub Actions aws s3 sync.
+    Value: !Ref SiteBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketName"
+  ElasticIP:
+    Description: SSH/deploy target for GitHub Actions.
+    Value: !Ref ElasticIP
+    Export:
+      Name: !Sub "${AWS::StackName}-ElasticIP"
+  InstanceId:
+    Value: !Ref Instance
+  DistributionId:
+    Description: CloudFront id for optional invalidations.
+    Value: !Ref Distribution
+    Export:
+      Name: !Sub "${AWS::StackName}-DistributionId"
+  DistributionDomainName:
+    Value: !GetAtt Distribution.DomainName
+  SiteUrl:
+    Value: !Sub "https://${DomainName}"
+  OriginHostname:
+    Value: !Ref OriginHostname

@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  us-east-1 ACM certificate for the ec2test2 CloudFront alias; DNS validation
+  writes records into the existing Route 53 zone.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@2
+  com.aws.cloudformation.Context:
+    arch: ACM cert in us-east-1 -> CloudFront viewer cert in eu-north-1 stack
+    must:
+      - deploy this stack in us-east-1 only
+      - DomainName must match the CloudFront alias
+    ref:
+      - infra/README.md
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: ec2test2.rinatschwartz770.xyz
+    AllowedPattern: "^[a-z0-9.-]+\\.[a-z]{2,}$"
+    Description: Hostname that CloudFront will serve (must match the alias).
+  HostedZoneId:
+    Type: AWS::Route53::HostedZone::Id
+    Description: Public hosted zone that already owns rinatschwartz770.xyz.
+
+Resources:
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: CloudFront custom domains require ACM in us-east-1; DNS validation is automatic via HostedZoneId
+        must:
+          - ValidationMethod=DNS
+          - region=us-east-1
+        mutable: must-never-change
+    Properties:
+      DomainName: !Ref DomainName
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !Ref DomainName
+          HostedZoneId: !Ref HostedZoneId
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+
+Outputs:
+  CertificateArn:
+    Description: Pass this ARN into the ec2test2 stack CertificateArn parameter.
+    Value: !Ref Certificate
+    Export:
+      Name: !Sub "${AWS::StackName}-CertificateArn"
+  DomainName:
+    Value: !Ref DomainName

@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY server/ ./server/
-COPY index.html cover-letter.html ./
+COPY index.html cover-letter.html cover-letter-api.html ./
 COPY css/ ./css/
 COPY js/ ./js/
 
