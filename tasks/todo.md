@@ -159,3 +159,11 @@ directly with the JDK 26 `javac`/`java` and JUnit jars from Maven Central.
 - [x] `docker-compose.yml`: Node `appserver` (cover-letter.html + js) and `coverletter` FastAPI
 - [x] `build.yml`: fail the S3 deploy if `cover-letter.html` / `js/cover-letter.js` are missing
 - [x] `build-server.yml`: push both images, copy compose to EC2, pull and up both services
+
+# Persistent ec2test2 (Jenkins infra, GHA app)
+
+- [x] `docker-compose.ec2.yml` for the new EC2 (template backend, `/data/cover-letters`)
+- [x] `infra/ec2test2-cert.yaml` + `infra/ec2test2.yaml` (S3, EC2+EIP, CloudFront, Route 53)
+- [x] `Jenkinsfile` + `infra/deploy-ec2test2.sh` create/update the stack only
+- [x] `.github/workflows/deploy-ec2test2-app.yml` deploys the app when the stack exists
+- [x] Verify https://ec2test2.rinatschwartz770.xyz after the first stack run

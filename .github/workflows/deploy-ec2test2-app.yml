@@ -1,0 +1,128 @@
+name: Deploy ec2test2 app
+
+on:
+  workflow_run:
+    workflows: ["Build and Deploy"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: eu-north-1
+  STACK_NAME: ec2test2
+
+jobs:
+  deploy:
+    name: Deploy app to ec2test2
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip
+          pip3 install awscli --upgrade --user
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Load stack outputs
+        id: stack
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+        run: |
+          set -euo pipefail
+          if ! aws cloudformation describe-stacks --stack-name "$STACK_NAME" >/tmp/ec2test2-stack.json 2>/tmp/ec2test2-stack.err; then
+            if grep -qi 'does not exist' /tmp/ec2test2-stack.err; then
+              echo "stack_exists=false" >> "$GITHUB_OUTPUT"
+              echo "Stack $STACK_NAME is not created yet. Run the local Jenkins job first."
+              exit 0
+            fi
+            cat /tmp/ec2test2-stack.err >&2
+            exit 1
+          fi
+          out() {
+            python3 -c "import json,sys; items=json.load(open('/tmp/ec2test2-stack.json'))['Stacks'][0]['Outputs']; print(next(i['OutputValue'] for i in items if i['OutputKey']==sys.argv[1]))" "$1"
+          }
+          echo "stack_exists=true" >> "$GITHUB_OUTPUT"
+          echo "bucket=$(out BucketName)" >> "$GITHUB_OUTPUT"
+          echo "eip=$(out ElasticIP)" >> "$GITHUB_OUTPUT"
+          echo "distribution=$(out DistributionId)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Node.js
+        if: steps.stack.outputs.stack_exists == 'true'
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Install dependencies
+        if: steps.stack.outputs.stack_exists == 'true'
+        run: npm ci
+
+      - name: Build application
+        if: steps.stack.outputs.stack_exists == 'true'
+        run: npm run build
+
+      - name: Verify cover letter static files
+        if: steps.stack.outputs.stack_exists == 'true'
+        run: |
+          test -f dist/webapp/cover-letter.html
+          test -f dist/webapp/js/cover-letter.js
+          test -f dist/webapp/css/styles.css
+
+      - name: Sync site to ec2test2 bucket
+        if: steps.stack.outputs.stack_exists == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+        run: aws s3 sync ./dist/webapp "s3://${{ steps.stack.outputs.bucket }}" --delete
+
+      - name: Copy production compose to EC2
+        if: steps.stack.outputs.stack_exists == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ steps.stack.outputs.eip }}
+          username: ec2-user
+          key: ${{ secrets.SSH_KEY }}
+          source: docker-compose.ec2.yml
+          target: /home/ec2-user/regins-website
+
+      - name: Pull and start containers
+        if: steps.stack.outputs.stack_exists == 'true'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ steps.stack.outputs.eip }}
+          username: ec2-user
+          key: ${{ secrets.SSH_KEY }}
+          command_timeout: 10m
+          script: |
+            set -e
+            cd /home/ec2-user/regins-website
+            test -f env.env || printf '%s\n' \
+              'WHATSAPP_VERIFY_TOKEN=unused' \
+              'WHATSAPP_ACCESS_TOKEN=' \
+              'DRY_RUN=true' > env.env
+            RUN_NUMBER='${{ github.event.workflow_run.run_number || github.run_number }}'
+            sed -i "s|image: sregina/backend:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/backend:v1.0.${RUN_NUMBER}|g" docker-compose.ec2.yml
+            sed -i "s|image: sregina/cover-letter-agent:.*|image: ${{ secrets.DOCKERHUB_USERNAME }}/cover-letter-agent:v1.0.${RUN_NUMBER}|g" docker-compose.ec2.yml
+            sudo /usr/local/bin/docker-compose -f docker-compose.ec2.yml pull
+            sudo /usr/local/bin/docker-compose -f docker-compose.ec2.yml up -d
+
+      - name: Invalidate CloudFront
+        if: steps.stack.outputs.stack_exists == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.stack.outputs.distribution }}" \
+            --paths "/*"
